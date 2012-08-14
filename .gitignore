@@ -1,0 +1,12 @@
+_cache
+_site
+*~
+doxygen
+hakyll
+hakyll*.ps
+*.aux
+*.hi
+*.hp
+*.o
+*.p_o
+*.prof
