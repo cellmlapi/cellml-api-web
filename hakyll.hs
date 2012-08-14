@@ -158,7 +158,7 @@ makeDownloadCentre (nextPlanned, releases) =
     showRelease r = "<div class='release'><h3 class='release'>" <> (LBS.pack . releaseVersion $ r) <> "</h3><ul class='filelist'>" <>
                     mconcat (map showFile (releaseFiles r)) <> "</ul></div>"
   in
-   Page (M.fromList [("nextplanned", nextPlanned), ("title", "Download"), ("description", "Download the CellML API")]) $
+   Page (M.fromList [("nextplanned", nextPlanned), ("title", "Download | CellML API"), ("description", "Download the CellML API")]) $
      "<h2 id='stablereleaselist-title'>Stable Releases</h2>" <>
      (mconcat (map showRelease stableReleases)) <>
      "<h2 id='releasecandidatelist-title'>All Releases and Release Candidates</h2>" <>
