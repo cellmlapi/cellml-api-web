@@ -1,6 +1,6 @@
 $(document).ready(function() {
   $(".doclink").click(function(e) {
-    $("#content").append("<div id='doc-dialog'><iframe style='width: 200px' src='doc-chooser.html'></iframe></div>");
+    $("#content").append("<div id='doc-dialog'><iframe style='width: 200px' src='/doc-chooser.html'></iframe></div>");
     $("#doc-dialog").dialog({ 'title': 'Which version of the documentation would you like to see?',
                               'autoOpen': true, 'modal': true, minWidth: 300,
                               'buttons': {'Cancel': function(){ $(this).close(); }}});
