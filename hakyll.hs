@@ -32,6 +32,7 @@ data BuildType = BTProduction | BTDebug deriving (Eq, Ord, Show)
 
 data APIRelease = APIRelease {
   releaseVersion :: String,
+  releaseDate :: String,
   releaseDocumentation :: Maybe String,
   releaseFiles :: [(APIFileType, [(BuildType, [(PackType, String)])])]
                              } deriving (Eq, Ord, Show)
@@ -42,6 +43,7 @@ releaseDescriptionParser =
   (
   many $ string "Release " *>
     (APIRelease <$> (many1 (noneOf " \r\n") <* string " ") <*>
+                    (many1 (noneOf " \r\n") <* string " ") <*>
                    (((string "Documented At " *> (Just <$> many1 (noneOf " \r\n:"))) <|>
                      (string "No Documentation" *> return Nothing)) <* string ":" <* many1 (oneOf " \t\r\n")) <*>
                    (many $ ((,) <$>
@@ -155,7 +157,8 @@ makeDownloadCentre (nextPlanned, releases) =
     showFile (fileType, buildList) = "<li>" <> (showFileType fileType) <> "<ul class='buildlist'>" <>
                                      (mconcat (map showBuild buildList)) <>
                                      "</ul></li>"
-    showRelease r = "<div class='release'><h3 class='release'>" <> (LBS.pack . releaseVersion $ r) <> "</h3><ul class='filelist'>" <>
+    showRelease r = "<div class='release'><h3 class='release'>" <> (LBS.pack . releaseVersion $ r) <> "(" <>
+                    (LBS.pack . releaseDate $ r) <> ")" <> "</h3><ul class='filelist'>" <>
                     mconcat (map showFile (releaseFiles r)) <> "</ul></div>"
   in
    Page (M.fromList [("nextplanned", nextPlanned), ("title", "Download | CellML API"), ("description", "Download the CellML API")]) $
