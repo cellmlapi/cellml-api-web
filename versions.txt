@@ -1,4 +1,37 @@
-NextPlanned: 1.12
+NextPlanned: 1.13
+Release 1.12 2012-11-01 Documented At 1.12:
+  Source Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/src/cellml-api-1.12.tar.bz2/download
+  Linux x86_64 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/linux-x86_64/cellml-sdk-1.12-Linux-x86_64.tar.bz2/download
+  Linux x86 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/linux-x86/cellml-sdk-1.12-Linux-i686.tar.bz2/download
+  MacOSX Production DMG http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/mac/cellml-sdk-1.12-Mac.dmg/download
+  MSVC2010 Production Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/win32/cellml-sdk-1.12-Win32-MSVC10.zip/download
+                      Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/win32/cellml-sdk-1.12-Win32-MSVC10.exe/download
+           Debug Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/win32/cellml-sdk-1.12-Win32-MSVC10-Debug.zip/download
+                 Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/win32/cellml-sdk-1.12-Win32-MSVC10-Debug.exe/download
+  MinGW Production Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/win32/cellml-sdk-1.12-Win32-MingW.zip/download
+                   Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121031/win32/cellml-sdk-1.12-Win32-MingW.exe/download
+Release 1.12rc2 2012-10-23 No Documentation:
+  Source Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/src/cellml-api-1.12.tar.bz2/download
+  Linux x86_64 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/linux-x86_64/cellml-sdk-1.12-Linux-x86_64.tar.bz2/download
+  Linux x86 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/linux-x86/cellml-sdk-1.12-Linux-i686.tar.bz2/download
+  MacOSX Production DMG http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/mac/cellml-sdk-1.12-Mac.dmg/download
+  MSVC2010 Production Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/win32/cellml-sdk-1.12-Win32-MSVC10.zip/download
+                      Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/win32/cellml-sdk-1.12-Win32-MSVC10.exe/download
+           Debug Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/win32/cellml-sdk-1.12-Win32-MSVC10-Debug.zip/download
+                 Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/win32/cellml-sdk-1.12-Win32-MSVC10-Debug.exe/download
+  MinGW Production Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/win32/cellml-sdk-1.12-Win32-MingW.zip/download
+                   Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121017/win32/cellml-sdk-1.12-Win32-MingW.exe/download
+Release 1.12rc1 2012-10-10 No Documentation:
+  Source Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/src/cellml-api-1.12.tar.bz2/download
+  Linux x86_64 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/linux-x86_64/cellml-sdk-1.12-Linux-x86_64.tar.bz2/download
+  Linux x86 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/linux-x86/cellml-sdk-1.12-Linux-i686.tar.bz2/download
+  MacOSX Production DMG http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/mac/cellml-sdk-1.12-Mac.dmg/download
+  MSVC2010 Production Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/win32/cellml-sdk-1.12-Win32-MSVC10.zip/download
+                      Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/win32/cellml-sdk-1.12-Win32-MSVC10.exe/download
+           Debug Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/win32/cellml-sdk-1.12-Win32-MSVC10-Debug.zip/download
+                 Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/win32/cellml-sdk-1.12-Win32-MSVC10-Debug.exe/download
+  MinGW Production Zip http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/win32/cellml-sdk-1.12-Win32-MingW.zip/download
+                   Self-extracting http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.12/20121009/win32/cellml-sdk-1.12-Win32-MingW.exe/download
 Release 1.11 2012-05-02 Documented At 1.11:
   Source Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.11/20120418/src/cellml-api-1.11.tar.bz2/download
   Linux x86_64 Production Tarball http://sourceforge.net/projects/cellml-api/files/CellML-API-Nightly/1.11/20120418/linux-x86_64/cellml-sdk-1.11-Linux-x86_64.tar.bz2/download

@@ -157,7 +157,8 @@ makeDownloadCentre (nextPlanned, releases) =
     showFile (fileType, buildList) = "<li>" <> (showFileType fileType) <> "<ul class='buildlist'>" <>
                                      (mconcat (map showBuild buildList)) <>
                                      "</ul></li>"
-    showRelease r = "<div class='release'><h3 class='release'>" <> (LBS.pack . releaseVersion $ r) <> "(" <>
+    showRelease r = "<div id='" <> (LBS.pack . releaseVersion $ r) <>
+                    "' class='release'><h3 class='release'>" <> (LBS.pack . releaseVersion $ r) <> "(" <>
                     (LBS.pack . releaseDate $ r) <> ")" <> "</h3><ul class='filelist'>" <>
                     mconcat (map showFile (releaseFiles r)) <> "</ul></div>"
   in
