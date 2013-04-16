@@ -61,7 +61,7 @@ mapContext f (Context g) = Context $ \k i -> f <$> g k i
 
 --------------------------------------------------------------------------------
 field :: String -> (Item a -> Compiler LBS.ByteString) -> Context a
-field key value = Context $ \k i -> if k == key then value i else (return LBS.empty)
+field key value = Context $ \k i -> if k == key then value i else missingInternal k i
 
 
 --------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ bodyField key = field key $ return . itemBody
 metadataField :: Context LBS.ByteString
 metadataField = Context $ \k i -> do
     value <- liftM LBSC.pack <$> getMetadataField (itemIdentifier i) k
-    maybe empty return value
+    maybe (missingInternal k i) return value
 
 
 --------------------------------------------------------------------------------
@@ -226,6 +226,8 @@ modificationTimeFieldWith locale key fmt = field key $ \i -> do
 
 --------------------------------------------------------------------------------
 missingField :: Context a
-missingField = Context $ \k i -> fail $
+missingField = Context missingInternal
+missingInternal k i =
+  fail $
     "Missing field $" ++ k ++ "$ in context for item " ++
     show (itemIdentifier i)

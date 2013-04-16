@@ -4,6 +4,7 @@ import Hakyll.Core.Item
 import Hakyll.Core.Routes
 import Hakyll.Core.Rules
 import Hakyll.Core.File
+import Hakyll.Core.Metadata
 import Hakyll.Web.CompressCss
 import Hakyll.Main
 import Hakyll.Web.TemplateBS
@@ -94,7 +95,10 @@ buildTemplate = do
                                                              ("type", "text/javascript")]) [NodeContent ""],
                  NodeContent "$script$"]
       fixupURI l
-        | not (T.isPrefixOf "/" l), not (T.isPrefixOf "http" l) = T.cons '/' l
+        | not (T.isPrefixOf "http" l)  &&
+          not (T.isPrefixOf "/" l) = "//physiomeproject.org/" <> l
+        | not (T.isPrefixOf "http" l ||
+               T.isPrefixOf "//" l) = "//physiomeproject.org/" <> l
         | otherwise = l
       doc' = transformBi fixElementsForTemplate $ transformBi removeScripts $ doc
       removeScripts ((NodeElement (Element "script" attr nodes)):l) = l
@@ -103,9 +107,11 @@ buildTemplate = do
         | name == "section" && M.lookup "id" attr == Just "content" =
           Element name attr [NodeContent "$body$"]
         | name == "a", Just l <- M.lookup "href" attr, T.isPrefixOf "/" l =
-            Element name (M.insert "href" (T.append "//dev.physiomeproject.org" l) attr) nodes
+            Element name (M.insert "href" (T.append "//www.physiomeproject.org" l) attr) nodes
+        | name == "img", Just l <- M.lookup "src" attr =
+          Element name (M.insert "src" (fixupURI l) attr) nodes
         | name == "title", (NodeContent title):_ <- nodes =
-            Element name attr [NodeContent $ "$title$ " `T.append` (snd $ T.breakOn "|" title)]
+          Element name attr [NodeContent $ (fst $ T.breakOn ":" title) <> ": $title$"]
         | name == "link", Just l <- M.lookup "href" attr =
               Element name (M.insert "href" (fixupURI l) attr) nodes
         | name == "head" = 
@@ -117,13 +123,16 @@ buildTemplate = do
       fixElementsForTemplate el = el
   return $ readTemplate $ "<!DOCTYPE html>\r\n" <> (LBS.drop 38 $ DOM.renderLBS def doc')
 
-ensureStdMetadata = M.alter (\x -> x `mplus` (Just "")) "css" .
-                    M.alter (\x -> x `mplus` (Just "")) "script"
+myDefaultContext =
+  metadataField `mappend`
+  constField "css" "" `mappend`
+  constField "script" "" `mappend`
+  defaultContext
 
 stdPageCompiler :: Context LBS.ByteString -> Item LBS.ByteString -> Compiler (Item LBS.ByteString)
 stdPageCompiler ctx p = do
-  mainWrapped <- loadAndApplyTemplate "templates/main.html" ctx p
-  loadAndApplyTemplate "templates/api-header.html" ctx mainWrapped
+  apiHeaderWrapped <- loadAndApplyTemplate "templates/api-header.html" ctx p
+  loadAndApplyTemplate "templates/main.html" ctx apiHeaderWrapped
 
 extractDoxygenContents d =
   let a1 = fst . LBS.breakAfter "<!-- start footer part -->" . snd . LBS.breakOn "<!-- end header part -->" $ d
@@ -150,14 +159,7 @@ doxygenCompiler = do
   let title = (fst . LBS.breakOn "</title>" . snd . LBS.breakAfter "<title>") dgc
   stdPageCompiler (constField "title" title <>
                    constField "description" title <>
-                   defaultContext) pageContents
-  
-  {-
-   ( (arr $ (\x -> M.fromList [("description", x), ("title", x)]) . LBS.unpack . fst .
-                   LBS.breakOn "</title>" . snd . LBS.breakAfter "<title>") &&&
-     (arr extractDoxygenContents >>^ prependDoxygenScripts)
-   ) >>^ uncurry Item
-  ) >>> applyTemplateCompiler "templates/doxygen.html" >>> stdPageCompiler -}
+                   myDefaultContext) pageContents
 
 isStableRelease = null . dropWhile (\x -> isDigit x || x == '.')
 
@@ -197,7 +199,7 @@ makeDownloadCentre (nextPlanned, releases) =
     "<h2 id='releasecandidatelist-title'>All Releases and Release Candidates</h2>" <>
     (mconcat (map showRelease releases)),
     (mconcat [constField "nextplanned" (LBSC.pack nextPlanned),
-              constField "title" "Download | CellML API"]) <> defaultContext
+              constField "title" "Download | CellML API"]) <> myDefaultContext
    )
 
 main :: IO ()
@@ -240,36 +242,47 @@ main = do
     match "*.html" $ do
        route idRoute
        compile $ do
-         p <- getResourceLBS
-         stdPageCompiler defaultContext p
+         p <- fmap LBSC.pack <$> getResourceBody
+         thisID <- getUnderlying
+         myTitle <- fromMaybe "" <$> getMetadataField thisID "title"
+         stdPageCompiler myDefaultContext p
 
     create ["doc-chooser.html"] $ do
       route idRoute
       compile $ do
         (curVersion, releases) <- getVersions
-        b <- getResourceBody
         let verString =
               mconcat $ flip mapMaybe releases $ \r -> do
                 doc <- LBSC.pack <$> releaseDocumentation r
                 return $ "<li><a target='_top' href='" <> doc <> "'>CellML API " <>
                   (LBSC.pack $ releaseVersion r) `LBS.append` "</a></li>"
-        let ctx = (constField "currentVersion" (LBSC.pack curVersion))
+        let ctx = (constField "currentVersion" (LBSC.pack curVersion)) `mappend`
+                  myDefaultContext
         item <- makeItem verString
         loadAndApplyTemplate "templates/doc-chooser.html" ctx item
-    create ["doc-chooser-nojs.html"] $ compile $ do
-      dc <- load "doc-chooser.html"
-      stdPageCompiler (constField "description" "See API documentation for..."
-                       <> constField "title" "Select API documentation for"
-                       <> defaultContext) dc
+    create ["doc-chooser-nojs.html"] $ do
+      route idRoute      
+      compile $ do
+        dc <- makeItem =<< (itemBody <$> load "doc-chooser.html")
+        stdPageCompiler (constField "description" "See API documentation for..."
+                         <> constField "title" "Select API documentation for"
+                         <> myDefaultContext) dc
 
-    create [".htaccess"] $
+    create [".htaccess"] $ do
+      route idRoute
       compile $ do
         (nextv, _) <- getVersions
         blankItem <- makeItem ""
         loadAndApplyTemplate "templates/htaccess"
           (constField "nextplanned" (LBSC.pack nextv))
           blankItem
-    create ["download.html"] $ compile $ do
-      (centre, ctx) <- makeDownloadCentre <$> getVersions
-      loadAndApplyTemplate "templates/download.html" ctx =<<
-        stdPageCompiler ctx =<< makeItem centre
+    create ["download.html"] $ do
+      route idRoute
+      compile $ do
+        (centre, ctx) <- makeDownloadCentre <$> getVersions
+        stdPageCompiler (ctx `mappend`
+                         constField "description" "Downloads" `mappend`
+                         constField "title" "Downloads"
+                        ) =<< 
+          loadAndApplyTemplate "templates/download.html" ctx =<<
+          makeItem centre
