@@ -1,11 +1,21 @@
 {-# LANGUAGE OverloadedStrings, PatternGuards #-}
-import Hakyll
+import Hakyll.Core.Compiler
+import Hakyll.Core.Item
+import Hakyll.Core.Routes
+import Hakyll.Core.Rules
+import Hakyll.Core.File
+import Hakyll.Web.CompressCss
+import Hakyll.Main
+import Hakyll.Web.TemplateBS
+import Hakyll.Web.TemplateBS.Read
+import Hakyll.Web.TemplateBS.Context
 import Network.HTTP.Conduit
 import qualified Text.HTML.DOM as HDOM
 import qualified Text.XML as DOM
 import Text.XML (Element(..), Node(..), Document(..), Prologue(..), Miscellaneous(..), Instruction(..), Name(..), Doctype(..), ExternalID(..))
 import Control.Monad
-import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy.Char8 as LBSC
 import qualified Data.ByteString.Lazy.Search as LBS
 import Control.Applicative
 import Data.Generics.Uniplate.Data
@@ -13,9 +23,9 @@ import qualified Data.Map as M
 import qualified Data.Text as T
 import Control.Arrow
 import Text.Hamlet.XML
-import Data.DeriveTH
-import Data.Derive.Data
-import Data.Data
+-- import Data.DeriveTH
+-- import Data.Derive.Data
+-- import Data.Data
 import Data.Monoid
 import Text.Pandoc
 import Data.Maybe
@@ -36,6 +46,7 @@ data APIRelease = APIRelease {
   releaseDocumentation :: Maybe String,
   releaseFiles :: [(APIFileType, [(BuildType, [(PackType, String)])])]
                              } deriving (Eq, Ord, Show)
+
 
 releaseDescriptionParser :: Parser (String, [APIRelease])
 releaseDescriptionParser =
@@ -63,11 +74,14 @@ releaseDescriptionParser =
                    ))
   )
     
+getVersions :: Compiler (String, [APIRelease])
 getVersions = do
-  v <- getResourceLBS "versions.txt"
-  either (error . show) id $ parse releaseDescriptionParser "versions.txt" v
+  v <- load "versions.txt"
+  either (error . show) return $
+    parse releaseDescriptionParser "versions.txt"
+      (itemBody v)
   
-buildTemplate :: IO (Template LBS.ByteString)
+buildTemplate :: IO Template
 buildTemplate = do
   doc <- HDOM.parseLBS <$> simpleHttp "http://www.physiomeproject.org/"
   let scripts = [NodeElement $ Element "script" attr' (if null content then [NodeContent ""] else content) |
@@ -106,11 +120,10 @@ buildTemplate = do
 ensureStdMetadata = M.alter (\x -> x `mplus` (Just "")) "css" .
                     M.alter (\x -> x `mplus` (Just "")) "script"
 
-loadAndApplyTemplateBS 
-
-stdPageCompiler :: ContextString -> Item LBS.ByteString -> Compiler (Item LBS.ByteString)
-stdPageCompiler ctx p =
-  loadAndApplyTemplate "templates/api-header.html" ctx (loadAndApplyTemplate "templates/main.html" ctx p)
+stdPageCompiler :: Context LBS.ByteString -> Item LBS.ByteString -> Compiler (Item LBS.ByteString)
+stdPageCompiler ctx p = do
+  mainWrapped <- loadAndApplyTemplate "templates/main.html" ctx p
+  loadAndApplyTemplate "templates/api-header.html" ctx mainWrapped
 
 extractDoxygenContents d =
   let a1 = fst . LBS.breakAfter "<!-- start footer part -->" . snd . LBS.breakOn "<!-- end header part -->" $ d
@@ -128,24 +141,28 @@ prependDoxygenScripts d =
      "search/search.js"
    ]) <> d
 
+
+
 -- This takes a Doxygen file and turns it into a page ready to go into our template.
 doxygenCompiler = do
-  dgc <- getResourceLBS
-  let pageContents = prependDoxygenScripts (extractDoxygenContents dgc)
+  dgc <- itemBody <$> getResourceLBS
+  pageContents <- makeItem (prependDoxygenScripts (extractDoxygenContents dgc))
   let title = (fst . LBS.breakOn "</title>" . snd . LBS.breakAfter "<title>") dgc
-  stdPageCompiler (constField "title" (LBS.unpack title) `mplus`
-                   constField "description" (LBS.unpack title) `mplus`
+  stdPageCompiler (constField "title" title <>
+                   constField "description" title <>
                    defaultContext) pageContents
   
-
+  {-
    ( (arr $ (\x -> M.fromList [("description", x), ("title", x)]) . LBS.unpack . fst .
                    LBS.breakOn "</title>" . snd . LBS.breakAfter "<title>") &&&
      (arr extractDoxygenContents >>^ prependDoxygenScripts)
    ) >>^ uncurry Item
-  ) >>> applyTemplateCompiler "templates/doxygen.html" >>> stdPageCompiler
+  ) >>> applyTemplateCompiler "templates/doxygen.html" >>> stdPageCompiler -}
 
 isStableRelease = null . dropWhile (\x -> isDigit x || x == '.')
 
+makeDownloadCentre :: (String, [APIRelease]) -> (LBS.ByteString,
+                                                 Context LBS.ByteString)
 makeDownloadCentre (nextPlanned, releases) =
   let
     (stableReleases, nonStableReleases) = partition (isStableRelease . releaseVersion) releases
@@ -162,22 +179,26 @@ makeDownloadCentre (nextPlanned, releases) =
     showPackType ZipFile = "Zip file"
     showPackType SelfExtracting = "Self-extracting exectuable"
     showPackType MacDMG = "Mac OS X Disk Image"
+    showBuild :: (BuildType, [(PackType, String)]) -> LBS.ByteString
     showBuild (buildType, packings) = mconcat (map (showPacking buildType) packings)
     showPacking buildType (packType, url) =
-      "<li><a href='" <> LBS.pack url <> "'>" <> (showBuildType buildType) <> ", " <> (showPackType packType) <> "</a></li>"
+      "<li><a href='" <> LBSC.pack url <> "'>" <> (showBuildType buildType) <> ", " <> (showPackType packType) <> "</a></li>"
+    showFile :: (APIFileType, [(BuildType, [(PackType, String)])]) -> LBS.ByteString
     showFile (fileType, buildList) = "<li>" <> (showFileType fileType) <> "<ul class='buildlist'>" <>
                                      (mconcat (map showBuild buildList)) <>
                                      "</ul></li>"
-    showRelease r = "<div id='" <> (LBS.pack . releaseVersion $ r) <>
-                    "' class='release'><h3 class='release'>" <> (LBS.pack . releaseVersion $ r) <> "(" <>
-                    (LBS.pack . releaseDate $ r) <> ")" <> "</h3><ul class='filelist'>" <>
+    showRelease r = "<div id='" <> (LBSC.pack . releaseVersion $ r) <>
+                    "' class='release'><h3 class='release'>" <> (LBSC.pack . releaseVersion $ r) <> "(" <>
+                    (LBSC.pack . releaseDate $ r) <> ")" <> "</h3><ul class='filelist'>" <>
                     mconcat (map showFile (releaseFiles r)) <> "</ul></div>"
   in
-   Item (M.fromList [("nextplanned", nextPlanned), ("title", "Download | CellML API"), ("description", "Download the CellML API")]) $
-     "<h2 id='stablereleaselist-title'>Stable Releases</h2>" <>
-     (mconcat (map showRelease stableReleases)) <>
-     "<h2 id='releasecandidatelist-title'>All Releases and Release Candidates</h2>" <>
-     (mconcat (map showRelease releases))
+   ("<h2 id='stablereleaselist-title'>Stable Releases</h2>" <>
+    (mconcat (map showRelease stableReleases)) <>
+    "<h2 id='releasecandidatelist-title'>All Releases and Release Candidates</h2>" <>
+    (mconcat (map showRelease releases)),
+    (mconcat [constField "nextplanned" (LBSC.pack nextPlanned),
+              constField "title" "Download | CellML API"]) <> defaultContext
+   )
 
 main :: IO ()
 main = do
@@ -212,42 +233,43 @@ main = do
       route (gsubRoute "doxygen/" (const ""))
       compile doxygenCompiler
 
-    -- Create the main template resource...
-    create ["templates/main.html"] (constA builtTemplate)
-  
     match "versions.txt" (compile $ getResourceString)
+    match "templates/*" (compile templateCompiler)
+    create ["templates/main.html"] (compile . makeItem $ builtTemplate)
     
-    match "templates/*" (compile (templateCompiler :: Compiler Resource (Template LBS.ByteString)))
+    match "*.html" $ do
+       route idRoute
+       compile $ do
+         p <- getResourceLBS
+         stdPageCompiler defaultContext p
 
-    match "index.html" $ do
+    create ["doc-chooser.html"] $ do
       route idRoute
-      compile ((readPageCompiler >>^ (\page -> page { pageBody = LBS.pack $ pageBody page })) >>> stdPageCompiler)
-    match "applications.html" $ do
-      route idRoute
-      compile ((readPageCompiler >>^ (\page -> page { pageBody = LBS.pack $ pageBody page })) >>> stdPageCompiler)
-    match "support.html" $ do
-      route idRoute
-      compile ((readPageCompiler >>^ (\page -> page { pageBody = LBS.pack $ pageBody page })) >>> stdPageCompiler)
+      compile $ do
+        (curVersion, releases) <- getVersions
+        b <- getResourceBody
+        let verString =
+              mconcat $ flip mapMaybe releases $ \r -> do
+                doc <- LBSC.pack <$> releaseDocumentation r
+                return $ "<li><a target='_top' href='" <> doc <> "'>CellML API " <>
+                  (LBSC.pack $ releaseVersion r) `LBS.append` "</a></li>"
+        let ctx = (constField "currentVersion" (LBSC.pack curVersion))
+        item <- makeItem verString
+        loadAndApplyTemplate "templates/doc-chooser.html" ctx item
+    create ["doc-chooser-nojs.html"] $ compile $ do
+      dc <- load "doc-chooser.html"
+      stdPageCompiler (constField "description" "See API documentation for..."
+                       <> constField "title" "Select API documentation for"
+                       <> defaultContext) dc
 
-    create ["doc-chooser.html"] $ compile $
-      getVersions >>>
-      (arr $ \(cv, rs) -> Page { pageMetadata = M.singleton "currentVersion" cv,
-                                 pageBody = mconcat $ flip mapMaybe rs $ \r -> do
-                                   doc <- LBS.pack <$> releaseDocumentation r
-                                   return $ "<li><a target='_top' href='" <> doc <> "'>CellML API " <> (LBS.pack $ releaseVersion r)
-                                     `LBS.append` "</a></li>"
-                               }
-      ) >>> applyTemplateCompiler "templates/doc-chooser.html"
-    match "doc-chooser.html" $ route idRoute
-
-    create ["doc-chooser-nojs.html"] $ compile $ require_ "doc-chooser.html" >>>
-      arr (setField "description" "See API documentation for...") >>>
-      arr (setField "title" "Select API version to see documentation for") >>> stdPageCompiler
-    match "doc-chooser-nojs.html" $ route idRoute
-
-    create [".htaccess"] $ compile $ (getVersions >>^ (\(nextv, _) -> Item (M.fromList [("nextplanned", nextv)]) LBS.empty)) >>>
-                         applyTemplateCompiler "templates/htaccess"
-    match ".htaccess" $ route idRoute
-    create ["download.html"] $ compile $ (getVersions >>^ makeDownloadCentre) >>>
-      applyTemplateCompiler "templates/download.html" >>> stdPageCompiler
-    match "download.html" $ route idRoute
+    create [".htaccess"] $
+      compile $ do
+        (nextv, _) <- getVersions
+        blankItem <- makeItem ""
+        loadAndApplyTemplate "templates/htaccess"
+          (constField "nextplanned" (LBSC.pack nextv))
+          blankItem
+    create ["download.html"] $ compile $ do
+      (centre, ctx) <- makeDownloadCentre <$> getVersions
+      loadAndApplyTemplate "templates/download.html" ctx =<<
+        stdPageCompiler ctx =<< makeItem centre
