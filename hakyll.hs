@@ -134,6 +134,11 @@ stdPageCompiler ctx p = do
   apiHeaderWrapped <- loadAndApplyTemplate "templates/api-header.html" ctx p
   loadAndApplyTemplate "templates/main.html" ctx apiHeaderWrapped
 
+barePageCompiler :: Context LBS.ByteString -> Item LBS.ByteString -> Compiler (Item LBS.ByteString)
+barePageCompiler ctx p = do
+  apiHeaderWrapped <- loadAndApplyTemplate "templates/api-header-nosidebar.html" ctx p
+  loadAndApplyTemplate "templates/main.html" ctx apiHeaderWrapped
+
 extractDoxygenContents d =
   let a1 = fst . LBS.breakAfter "<!-- start footer part -->" . snd . LBS.breakOn "<!-- end header part -->" $ d
       a2 = fst . LBS.breakAfter "<!-- contents -->" . snd . LBS.breakOn "<!--header-->" $ d
@@ -222,6 +227,9 @@ main = do
     match "doxygen/*/*.png" $ do
       route (gsubRoute "doxygen/" (const ""))
       compile copyFileCompiler
+    match "doxygen/*/*/*.png" $ do
+      route (gsubRoute "doxygen/" (const ""))
+      compile copyFileCompiler
     match "doxygen/*/*.js" $ do
       route (gsubRoute "doxygen/" (const ""))
       compile copyFileCompiler
@@ -239,12 +247,18 @@ main = do
     match "templates/*" (compile templateCompiler)
     create ["templates/main.html"] (compile . makeItem $ builtTemplate)
     
+    match "index.html" $ do
+       route idRoute
+       compile $ do
+         p <- fmap LBSC.pack <$> getResourceBody
+         thisID <- getUnderlying
+         barePageCompiler myDefaultContext p
+
     match "*.html" $ do
        route idRoute
        compile $ do
          p <- fmap LBSC.pack <$> getResourceBody
          thisID <- getUnderlying
-         myTitle <- fromMaybe "" <$> getMetadataField thisID "title"
          stdPageCompiler myDefaultContext p
 
     create ["doc-chooser.html"] $ do
