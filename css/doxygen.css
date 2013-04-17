@@ -85,6 +85,9 @@ h3.version {
 #MSearchResultsWindow {
     display: none;
 }
+#MSearchCloseImg {
+    display: none;
+}
 
 div.qindex, div.navtab{
 	background-color: #EBEFF6;
