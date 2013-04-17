@@ -155,15 +155,13 @@ prependDoxygenScripts d =
      "search/search.js"
    ]) <> d
 
-
-
 -- This takes a Doxygen file and turns it into a page ready to go into our template.
 doxygenCompiler = do
   dgc <- itemBody <$> getResourceLBS
   pageContents <- makeItem (prependDoxygenScripts (extractDoxygenContents dgc))
   let title = (fst . LBS.breakOn "</title>" . snd . LBS.breakAfter "<title>") dgc
   stdPageCompiler (constField "title" title <>
-                   constField "description" title <>
+                   constField "description" (LBS.drop 8 title) <>
                    myDefaultContext) pageContents
 
 isStableRelease = null . dropWhile (\x -> isDigit x || x == '.')

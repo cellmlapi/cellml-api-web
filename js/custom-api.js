@@ -1,4 +1,7 @@
 $(document).ready(function() {
+  var sn = $("#side-nav");
+  sn.remove();
+  $("#sidebar").append(sn);
   $(".doclink").click(function(e) {
     $("#content").append("<div id='doc-dialog'><iframe style='width: 200px' src='/doc-chooser.html'></iframe></div>");
     $("#doc-dialog").dialog({ 'title': 'Which version of the documentation would you like to see?',

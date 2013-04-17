@@ -76,7 +76,6 @@
   display:block;
   padding:0px;
   margin:0px;
-  margin-left:200px;
   -webkit-overflow-scrolling : touch; /* iOS 5+ */
 }
 
@@ -84,7 +83,6 @@
   padding:0 6px 0 0;
   margin: 0px;
   display:block;
-  position: absolute;
   left: -10px;
   width: 200px;
 }
