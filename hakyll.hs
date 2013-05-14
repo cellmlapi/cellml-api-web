@@ -182,7 +182,7 @@ makeDownloadCentre (nextPlanned, releases) =
     showBuildType BTDebug = "Build with debug symbols"
     showPackType TarBall = "Tarball"
     showPackType ZipFile = "Zip file"
-    showPackType SelfExtracting = "Self-extracting exectuable"
+    showPackType SelfExtracting = "Self-extracting executable"
     showPackType MacDMG = "Mac OS X Disk Image"
     showBuild :: (BuildType, [(PackType, String)]) -> LBS.ByteString
     showBuild (buildType, packings) = mconcat (map (showPacking buildType) packings)
